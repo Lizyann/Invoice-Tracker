@@ -22,24 +22,24 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
       }}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
         ${currentView === view 
-          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
-          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200/50' 
+          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-200'}`}
     >
-      <Icon className={`h-5 w-5 ${currentView === view ? 'text-white' : 'text-slate-500 group-hover:text-slate-900'}`} />
+      <Icon className={`h-5 w-5 ${currentView === view ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200'}`} />
       <span className="font-medium">{label}</span>
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 lg:flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 lg:flex transition-colors">
       {/* Sidebar for Desktop */}
-      <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-200 h-screen sticky top-0">
+      <aside className="hidden lg:flex flex-col w-72 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 h-screen sticky top-0 transition-colors">
         <div className="p-8">
             <div className="flex items-center gap-3">
                 <div className="bg-indigo-600 p-2 rounded-lg">
                     <Wallet className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-xl font-bold text-slate-900">InvoiceFlow</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-white">InvoiceFlow</span>
             </div>
         </div>
 
@@ -49,21 +49,21 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
             <NavItem view="settings" icon={Settings} label="Settings" />
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-700">
             <div className="flex items-center gap-3 px-4 py-3 mb-2">
                 {user.avatarUrl ? (
-                   <img src={user.avatarUrl} alt={user.name} className="h-10 w-10 rounded-full object-cover border border-slate-200" />
+                   <img src={user.avatarUrl} alt={user.name} className="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-600" />
                 ) : (
-                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-indigo-600 font-bold border border-slate-200">
+                  <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold border border-slate-200 dark:border-slate-600">
                       {user.name.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="overflow-hidden">
-                    <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
-                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-200 truncate">{user.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                 </div>
             </div>
-            <Button variant="ghost" className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700" onClick={onLogout}>
+            <Button variant="ghost" className="w-full justify-start text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700" onClick={onLogout}>
                 <LogOut className="h-4 w-4 mr-3" />
                 Sign Out
             </Button>
@@ -71,26 +71,26 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-20">
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20">
         <div className="flex items-center gap-2">
              <div className="bg-indigo-600 p-1.5 rounded-lg">
                 <Wallet className="h-5 w-5 text-white" />
             </div>
-            <span className="font-bold text-slate-900">InvoiceFlow</span>
+            <span className="font-bold text-slate-900 dark:text-white">InvoiceFlow</span>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 dark:text-slate-300">
             {isMobileMenuOpen ? <X /> : <Menu />}
         </button>
       </div>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-white z-10 pt-20 px-4 lg:hidden">
+        <div className="fixed inset-0 bg-white dark:bg-slate-800 z-10 pt-20 px-4 lg:hidden">
             <nav className="space-y-4">
                 <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
                 <NavItem view="invoices" icon={FileText} label="Invoices" />
                 <NavItem view="settings" icon={Settings} label="Settings" />
-                <div className="pt-8 border-t border-slate-100">
+                <div className="pt-8 border-t border-slate-100 dark:border-slate-700">
                     <Button variant="danger" className="w-full justify-center" onClick={onLogout}>
                         <LogOut className="h-4 w-4 mr-2" /> Sign Out
                     </Button>

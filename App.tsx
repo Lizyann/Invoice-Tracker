@@ -20,6 +20,15 @@ const App: React.FC = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Initialize Theme
+  useEffect(() => {
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   // Initialize Auth Subscription
   useEffect(() => {
     const unsubscribe = subscribeToAuthChanges(async (currentUser) => {
@@ -116,7 +125,7 @@ const App: React.FC = () => {
 
   if (isAuthChecking) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
     );
@@ -138,14 +147,14 @@ const App: React.FC = () => {
         }}
       >
         {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center justify-between">
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
                 <div>
                   <strong>Connection Error: </strong> {error}
-                  <p className="mt-1 text-xs text-red-600">Please ensure you have run the <code className="bg-red-100 px-1 rounded">supabase_setup.sql</code> script in your Supabase SQL Editor.</p>
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">Please ensure you have run the <code className="bg-red-100 dark:bg-red-900/50 px-1 rounded">supabase_setup.sql</code> script in your Supabase SQL Editor.</p>
                 </div>
                 <button 
                   onClick={() => user && fetchInvoices(user.id)}
-                  className="p-2 hover:bg-red-100 rounded-full transition-colors"
+                  className="p-2 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors"
                   title="Retry"
                 >
                   <RefreshCcw className="h-4 w-4" />

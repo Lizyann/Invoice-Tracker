@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../../types';
 import { Button, Input, TextArea, Card } from '../../components/ui';
-import { Camera, Save, User as UserIcon, Loader2, Trash2, Building } from 'lucide-react';
+import { Camera, Save, User as UserIcon, Loader2, Trash2, Building, Moon, Sun } from 'lucide-react';
 import { uploadAvatar, updateUserProfile } from '../../services/storage';
 
 interface ProfileSettingsProps {
@@ -21,7 +21,13 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize theme state from DOM
+  useEffect(() => {
+    setIsDarkMode(document.documentElement.classList.contains('dark'));
+  }, []);
 
   // Clean up preview URL on unmount to prevent memory leaks
   useEffect(() => {
@@ -31,6 +37,18 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
         }
     };
   }, [previewUrl]);
+
+  const toggleTheme = () => {
+    if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        setIsDarkMode(false);
+    } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        setIsDarkMode(true);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -96,10 +114,6 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
       const publicUrl = await uploadAvatar(user.id, file);
       const updatedUser = await updateUserProfile({ avatarUrl: publicUrl });
       onUpdate(updatedUser);
-      // We keep the previewUrl for a smooth transition, or clear it. 
-      // Clearing it relies on the new remote URL loading instantly.
-      // Let's clear it to ensure we are viewing the server version, 
-      // but maybe waiting a tick helps. For now, simply clearing.
       setPreviewUrl(null); 
     } catch (error: any) {
       console.error(error);
@@ -117,18 +131,18 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Profile Settings</h1>
-        <p className="text-slate-500">Manage your business profile and branding.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Profile Settings</h1>
+        <p className="text-slate-500 dark:text-slate-400">Manage your business profile and branding.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Avatar & Basic Info */}
+        {/* Left Column: Avatar & Appearance */}
         <div className="space-y-6">
             <Card className="p-6 flex flex-col items-center text-center">
                 <div className="relative group cursor-pointer mb-4" onClick={handleAvatarClick}>
-                    <div className="h-32 w-32 rounded-full overflow-hidden bg-indigo-50 ring-4 ring-white shadow-lg flex items-center justify-center relative">
+                    <div className="h-32 w-32 rounded-full overflow-hidden bg-indigo-50 dark:bg-indigo-900/30 ring-4 ring-white dark:ring-slate-700 shadow-lg flex items-center justify-center relative">
                     {isUploading && (
-                        <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-20 backdrop-blur-sm">
+                        <div className="absolute inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-20 backdrop-blur-sm">
                             <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
                         </div>
                     )}
@@ -141,7 +155,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
                             key={displayUrl} // Force re-render on URL change
                         />
                     ) : (
-                        <span className="text-4xl font-bold text-indigo-600 select-none">
+                        <span className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 select-none">
                             {user.name.charAt(0).toUpperCase()}
                         </span>
                     )}
@@ -165,7 +179,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
                     <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 -mt-2 mb-2" 
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 -mt-2 mb-2" 
                         onClick={handleRemoveAvatar} 
                         disabled={isUploading}
                         type="button"
@@ -174,8 +188,29 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
                     </Button>
                 )}
 
-                <h2 className="text-lg font-bold text-slate-900">{user.name}</h2>
-                <p className="text-sm text-slate-500">{user.email}</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">{user.name}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+            </Card>
+
+            <Card className="p-6">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center">
+                    <Moon className="h-5 w-5 mr-2 text-indigo-500" />
+                    Appearance
+                </h3>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="font-medium text-slate-900 dark:text-white">Dark Mode</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Toggle app theme</p>
+                    </div>
+                    <button
+                        onClick={toggleTheme}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:ring-offset-slate-800 ${isDarkMode ? 'bg-indigo-600' : 'bg-slate-200'}`}
+                        title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                    >
+                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                         <span className="sr-only">Toggle dark mode</span>
+                    </button>
+                </div>
             </Card>
         </div>
 
@@ -185,7 +220,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
                 <form onSubmit={handleSubmit} className="space-y-8">
                     {/* Personal Information */}
                     <div>
-                        <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center">
+                        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center">
                             <UserIcon className="h-5 w-5 mr-2 text-indigo-500" />
                             Personal Details
                         </h3>
@@ -201,16 +236,16 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
                                 label="Email Address" 
                                 value={user.email} 
                                 disabled 
-                                className="bg-slate-50 text-slate-500 cursor-not-allowed" 
+                                className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-500 cursor-not-allowed" 
                             />
                         </div>
                     </div>
 
-                    <div className="border-t border-slate-100" />
+                    <div className="border-t border-slate-100 dark:border-slate-700" />
 
                     {/* Business Information */}
                     <div>
-                        <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center">
+                        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center">
                             <Building className="h-5 w-5 mr-2 text-indigo-500" />
                             Business Information
                         </h3>
@@ -260,7 +295,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
                     </div>
 
                     <div className="pt-4 flex justify-end">
-                        <Button type="submit" isLoading={isSaving} disabled={isUploading} className="w-full md:w-auto px-8 shadow-lg shadow-indigo-200">
+                        <Button type="submit" isLoading={isSaving} disabled={isUploading} className="w-full md:w-auto px-8 shadow-lg shadow-indigo-200 dark:shadow-none">
                             <Save className="h-4 w-4 mr-2" />
                             Save Changes
                         </Button>

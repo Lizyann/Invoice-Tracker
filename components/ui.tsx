@@ -14,10 +14,10 @@ export const Button: React.FC<ButtonProps> = ({
   const baseStyles = "inline-flex items-center justify-center font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-lg";
   
   const variants = {
-    primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500",
-    secondary: "bg-slate-800 text-white hover:bg-slate-900 focus:ring-slate-700",
-    outline: "border border-slate-300 bg-transparent hover:bg-slate-50 text-slate-700 focus:ring-slate-400",
-    ghost: "bg-transparent hover:bg-slate-100 text-slate-700 focus:ring-slate-400",
+    primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 dark:ring-offset-slate-900",
+    secondary: "bg-slate-800 text-white hover:bg-slate-900 focus:ring-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600",
+    outline: "border border-slate-300 dark:border-slate-600 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-slate-400",
+    ghost: "bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-slate-400",
     danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
   };
   
@@ -48,11 +48,12 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(({ label, error, className = '', ...props }, ref) => {
   return (
     <div className="w-full">
-      {label && <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>}
+      {label && <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>}
       <input
         ref={ref}
         className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all
-          ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-300'} 
+          bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+          ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 dark:border-slate-700'} 
           ${className}`}
         {...props}
       />
@@ -70,11 +71,12 @@ interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(({ label, error, className = '', ...props }, ref) => {
   return (
     <div className="w-full">
-      {label && <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>}
+      {label && <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>}
       <textarea
         ref={ref}
         className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none
-          ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-300'} 
+          bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+          ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 dark:border-slate-700'} 
           ${className}`}
         {...props}
       />
@@ -92,11 +94,12 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({ label, error, children, className = '', ...props }, ref) => {
   return (
     <div className="w-full">
-      {label && <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>}
+      {label && <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>}
       <select
         ref={ref}
-        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white
-          ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-300'} 
+        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500
+          bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+          ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 dark:border-slate-700'} 
           ${className}`}
         {...props}
       >
@@ -109,7 +112,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({ label,
 
 // --- Card ---
 export const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${className}`}>
+  <div className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors ${className}`}>
     {children}
   </div>
 );
