@@ -1,0 +1,5 @@
+{
+  "name": "InvoiceFlow",
+  "description": "A professional invoice tracking application featuring secure user authentication, dashboard analytics, and comprehensive journal entry management.",
+  "requestFramePermissions": []
+}
