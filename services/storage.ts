@@ -10,6 +10,8 @@ const mapUser = (user: any): User => ({
   companyName: user.user_metadata?.company_name,
   phone: user.user_metadata?.phone,
   address: user.user_metadata?.address,
+  website: user.user_metadata?.website,
+  taxId: user.user_metadata?.tax_id,
 });
 
 // --- Auth Services ---
@@ -97,6 +99,8 @@ export const updateUserProfile = async (updates: Partial<User>): Promise<User> =
       company_name: updates.companyName,
       phone: updates.phone,
       address: updates.address,
+      website: updates.website,
+      tax_id: updates.taxId,
     }
   });
 

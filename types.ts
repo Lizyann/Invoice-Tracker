@@ -13,6 +13,8 @@ export interface User {
   companyName?: string;
   phone?: string;
   address?: string;
+  website?: string;
+  taxId?: string;
 }
 
 export interface InvoiceItem {
