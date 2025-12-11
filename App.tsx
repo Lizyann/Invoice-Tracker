@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize Auth Subscription
   useEffect(() => {
@@ -37,11 +38,14 @@ const App: React.FC = () => {
 
   const fetchInvoices = async (userId: string) => {
     setIsLoadingData(true);
+    setError(null);
     try {
       const data = await getInvoices(userId);
       setInvoices(data);
-    } catch (e) {
-      console.error("Failed to fetch invoices", e);
+    } catch (e: any) {
+      const msg = e.message || JSON.stringify(e);
+      console.error("Failed to fetch invoices:", msg);
+      setError("Could not load invoices. Please ensure you have run the database setup SQL.");
     } finally {
         setIsLoadingData(false);
     }
@@ -65,8 +69,8 @@ const App: React.FC = () => {
         setIsEditing(false);
         setCurrentInvoice(null);
         setView('invoices');
-    } catch (e) {
-        alert("Failed to save invoice. " + (e as Error).message);
+    } catch (e: any) {
+        alert("Failed to save invoice. " + (e.message || e));
     }
   };
 
@@ -79,8 +83,8 @@ const App: React.FC = () => {
     try {
         await saveInvoicesBulk(invoicesWithUser);
         await fetchInvoices(user.id);
-    } catch (e) {
-        alert("Failed to import. " + (e as Error).message);
+    } catch (e: any) {
+        alert("Failed to import. " + (e.message || e));
     }
   };
 
@@ -90,8 +94,8 @@ const App: React.FC = () => {
         try {
             await deleteInvoice(id);
             await fetchInvoices(user.id);
-        } catch (e) {
-             alert("Failed to delete. " + (e as Error).message);
+        } catch (e: any) {
+             alert("Failed to delete. " + (e.message || e));
         }
     }
   };
@@ -123,6 +127,12 @@ const App: React.FC = () => {
           setIsEditing(false);
         }}
       >
+        {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <strong>Error: </strong> {error}
+            </div>
+        )}
+
         {isEditing ? (
           <InvoiceEditor 
             userId={user.id} 
