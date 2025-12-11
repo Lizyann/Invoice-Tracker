@@ -39,6 +39,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
   };
 
   const handleAvatarClick = () => {
+    if (isUploading) return;
     fileInputRef.current?.click();
   };
 
@@ -59,9 +60,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
       onUpdate(updatedUser);
     } catch (error: any) {
       console.error(error);
-      alert('Failed to upload image. Ensure you have an "avatars" bucket in Supabase with public access.');
+      alert(error.message || 'Failed to upload image. Please check your connection and try again.');
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -75,16 +77,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
       <Card className="p-8">
         <div className="flex flex-col items-center mb-8">
           <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-            <div className="h-24 w-24 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-white shadow-lg flex items-center justify-center">
+            <div className="h-24 w-24 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-white shadow-lg flex items-center justify-center relative">
               {isUploading ? (
-                <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
-              ) : user.avatarUrl ? (
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                   <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+                </div>
+              ) : null}
+              
+              {user.avatarUrl ? (
                 <img src={user.avatarUrl} alt="Profile" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-2xl font-bold text-indigo-600">{user.name.charAt(0).toUpperCase()}</span>
               )}
             </div>
-            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className={`absolute inset-0 bg-black/40 rounded-full flex items-center justify-center transition-opacity ${isUploading ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
               <Camera className="h-6 w-6 text-white" />
             </div>
             <input 
@@ -93,9 +99,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
               className="hidden" 
               accept="image/jpeg,image/png,image/gif"
               onChange={handleFileChange}
+              disabled={isUploading}
             />
           </div>
-          <p className="mt-3 text-sm text-slate-500">Click to upload new photo</p>
+          <p className="mt-3 text-sm text-slate-500">
+             {isUploading ? 'Uploading...' : 'Click to upload new photo'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -142,7 +151,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
           />
 
           <div className="pt-4 flex justify-end">
-            <Button type="submit" isLoading={isSaving} className="w-full md:w-auto px-8">
+            <Button type="submit" isLoading={isSaving} disabled={isUploading} className="w-full md:w-auto px-8">
               <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>

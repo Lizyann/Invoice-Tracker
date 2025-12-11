@@ -77,7 +77,13 @@ export const uploadAvatar = async (userId: string, file: File): Promise<string> 
     .from('avatars')
     .upload(filePath, file, { upsert: true });
 
-  if (uploadError) throw uploadError;
+  if (uploadError) {
+    // Check for common error indicating bucket missing
+    if (uploadError.message.includes('Bucket not found') || (uploadError as any).statusCode === '404') {
+        throw new Error('Storage bucket "avatars" not found. Please run the provided supabase_setup.sql script in your Supabase SQL Editor.');
+    }
+    throw uploadError;
+  }
 
   const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
   return data.publicUrl;
