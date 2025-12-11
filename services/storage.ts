@@ -1,16 +1,23 @@
 import { supabase } from './supabaseClient';
 import { Invoice, User } from '../types';
 
+// --- Helper: Map Supabase User to App User ---
+const mapUser = (user: any): User => ({
+  id: user.id,
+  email: user.email || '',
+  name: user.user_metadata?.full_name || user.email || 'User',
+  avatarUrl: user.user_metadata?.avatar_url,
+  companyName: user.user_metadata?.company_name,
+  phone: user.user_metadata?.phone,
+  address: user.user_metadata?.address,
+});
+
 // --- Auth Services ---
 
 export const subscribeToAuthChanges = (callback: (user: User | null) => void) => {
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     if (session?.user) {
-      callback({
-        id: session.user.id,
-        email: session.user.email || '',
-        name: session.user.user_metadata?.full_name || session.user.email || 'User',
-      });
+      callback(mapUser(session.user));
     } else {
       callback(null);
     }
@@ -27,11 +34,7 @@ export const login = async (email: string, password: string): Promise<User> => {
   if (error) throw error;
   if (!data.user) throw new Error('No user data returned');
 
-  return {
-    id: data.user.id,
-    email: data.user.email || '',
-    name: data.user.user_metadata?.full_name || data.user.email || 'User',
-  };
+  return mapUser(data.user);
 };
 
 export const signup = async (email: string, password: string, name: string): Promise<User> => {
@@ -48,16 +51,11 @@ export const signup = async (email: string, password: string, name: string): Pro
   if (error) throw error;
   if (!data.user) throw new Error('No user created');
   
-  // If email confirmation is enabled, session might be null.
   if (!data.session) {
     throw new Error('Account created! Please check your email to confirm your account before logging in.');
   }
 
-  return {
-    id: data.user.id,
-    email: data.user.email || '',
-    name: name,
-  };
+  return mapUser(data.user);
 };
 
 export const logout = async () => {
@@ -67,18 +65,42 @@ export const logout = async () => {
 export const getCurrentUser = async (): Promise<User | null> => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return null;
+  return mapUser(session.user);
+};
 
-  return {
-    id: session.user.id,
-    email: session.user.email || '',
-    name: session.user.user_metadata?.full_name || session.user.email || 'User',
-  };
+export const uploadAvatar = async (userId: string, file: File): Promise<string> => {
+  // Ensure "avatars" bucket exists and policies allow insert/select for auth users in Supabase Dashboard
+  const fileExt = file.name.split('.').pop();
+  const filePath = `${userId}/avatar-${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, file, { upsert: true });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+  return data.publicUrl;
+};
+
+export const updateUserProfile = async (updates: Partial<User>): Promise<User> => {
+  const { data, error } = await supabase.auth.updateUser({
+    data: {
+      full_name: updates.name,
+      avatar_url: updates.avatarUrl,
+      company_name: updates.companyName,
+      phone: updates.phone,
+      address: updates.address,
+    }
+  });
+
+  if (error) throw error;
+  if (!data.user) throw new Error("Update failed");
+
+  return mapUser(data.user);
 };
 
 // --- Data Services ---
-
-// We map Supabase DB column names to our TypeScript Interface properties if they differ.
-// In the SQL setup, I used snake_case for DB columns.
 
 export const getInvoices = async (userId: string): Promise<Invoice[]> => {
   const { data, error } = await supabase
@@ -106,9 +128,7 @@ export const getInvoices = async (userId: string): Promise<Invoice[]> => {
 };
 
 export const saveInvoice = async (invoice: Invoice): Promise<Invoice> => {
-  // Convert camelCase to snake_case for DB
   const dbPayload = {
-    // id: invoice.id, // Supabase generates ID for new inserts if not provided, or we use upsert
     user_id: invoice.userId,
     direction: invoice.direction,
     client_name: invoice.clientName,
@@ -116,20 +136,16 @@ export const saveInvoice = async (invoice: Invoice): Promise<Invoice> => {
     date: invoice.date,
     due_date: invoice.dueDate,
     status: invoice.status,
-    items: invoice.items, // stored as jsonb
+    items: invoice.items,
     notes: invoice.notes,
     total: invoice.total,
-    // created_at: handled by default for new rows
   };
 
-  // If ID looks like a UUID (real ID), include it for update. 
-  // If it's a temp ID (starts with 'inv_') or empty, let Supabase gen UUID for insert.
   const isRealId = invoice.id && !invoice.id.startsWith('inv_');
   
   let result;
   
   if (isRealId) {
-    // Update existing
     const { data, error } = await supabase
       .from('invoices')
       .update(dbPayload)
@@ -140,7 +156,6 @@ export const saveInvoice = async (invoice: Invoice): Promise<Invoice> => {
     if (error) throw error;
     result = data;
   } else {
-    // Insert new
     const { data, error } = await supabase
       .from('invoices')
       .insert(dbPayload)
@@ -151,7 +166,6 @@ export const saveInvoice = async (invoice: Invoice): Promise<Invoice> => {
     result = data;
   }
 
-  // Map back to frontend type
   return {
     id: result.id,
     userId: result.user_id,
@@ -170,7 +184,7 @@ export const saveInvoice = async (invoice: Invoice): Promise<Invoice> => {
 
 export const saveInvoicesBulk = async (invoices: Invoice[]): Promise<void> => {
   const payload = invoices.map(inv => ({
-    user_id: inv.userId, // Ensure we use the logged-in user ID
+    user_id: inv.userId,
     direction: inv.direction,
     client_name: inv.clientName,
     client_email: inv.clientEmail,

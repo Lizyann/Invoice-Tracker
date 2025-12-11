@@ -9,6 +9,10 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  avatarUrl?: string;
+  companyName?: string;
+  phone?: string;
+  address?: string;
 }
 
 export interface InvoiceItem {

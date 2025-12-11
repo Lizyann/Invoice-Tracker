@@ -3,6 +3,7 @@ import { AuthScreen } from './features/auth/AuthScreen';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { InvoiceList } from './features/invoices/InvoiceList';
 import { InvoiceEditor } from './features/invoices/InvoiceEditor';
+import { ProfileSettings } from './features/settings/ProfileSettings';
 import { Layout } from './components/Layout';
 import { User, Invoice } from './types';
 import { logout, getInvoices, saveInvoice, deleteInvoice, saveInvoicesBulk, subscribeToAuthChanges } from './services/storage';
@@ -11,7 +12,7 @@ import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [view, setView] = useState<'dashboard' | 'invoices'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'invoices' | 'settings'>('dashboard');
   const [isEditing, setIsEditing] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -47,8 +48,6 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (loggedInUser: User) => {
-    // This is mainly for the immediate UI feedback from AuthScreen, 
-    // though the subscription would catch it too.
     setUser(loggedInUser);
     fetchInvoices(loggedInUser.id);
     setView('dashboard');
@@ -56,7 +55,6 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    // User state update handled by subscription
   };
 
   const handleSaveInvoice = async (invoice: Invoice) => {
@@ -66,7 +64,7 @@ const App: React.FC = () => {
         await fetchInvoices(user.id);
         setIsEditing(false);
         setCurrentInvoice(null);
-        setView('invoices'); // Return to list after save
+        setView('invoices');
     } catch (e) {
         alert("Failed to save invoice. " + (e as Error).message);
     }
@@ -74,7 +72,6 @@ const App: React.FC = () => {
 
   const handleImportInvoices = async (importedInvoices: Invoice[]) => {
     if (!user) return;
-    // Assign current user ID to imported invoices to ensure ownership
     const invoicesWithUser = importedInvoices.map(inv => ({
         ...inv,
         userId: user.id
@@ -99,6 +96,10 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUpdateProfile = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
+
   if (isAuthChecking) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -107,7 +108,6 @@ const App: React.FC = () => {
     );
   }
 
-  // If not logged in, show Auth
   if (!user) {
     return <AuthScreen onLogin={handleLogin} />;
   }
@@ -123,7 +123,6 @@ const App: React.FC = () => {
           setIsEditing(false);
         }}
       >
-        {/* View Routing Logic */}
         {isEditing ? (
           <InvoiceEditor 
             userId={user.id} 
@@ -150,6 +149,12 @@ const App: React.FC = () => {
                 }}
                 onDelete={handleDeleteInvoice}
                 onImport={handleImportInvoices}
+              />
+            )}
+            {view === 'settings' && (
+              <ProfileSettings 
+                user={user} 
+                onUpdate={handleUpdateProfile} 
               />
             )}
           </>

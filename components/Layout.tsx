@@ -7,14 +7,14 @@ interface LayoutProps {
   children: React.ReactNode;
   user: User;
   onLogout: () => void;
-  currentView: 'dashboard' | 'invoices';
-  onNavigate: (view: 'dashboard' | 'invoices') => void;
+  currentView: 'dashboard' | 'invoices' | 'settings';
+  onNavigate: (view: 'dashboard' | 'invoices' | 'settings') => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, currentView, onNavigate }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
-  const NavItem = ({ view, icon: Icon, label }: { view: 'dashboard' | 'invoices', icon: any, label: string }) => (
+  const NavItem = ({ view, icon: Icon, label }: { view: 'dashboard' | 'invoices' | 'settings', icon: any, label: string }) => (
     <button
       onClick={() => {
         onNavigate(view);
@@ -46,13 +46,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
         <nav className="flex-1 px-4 space-y-2">
             <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
             <NavItem view="invoices" icon={FileText} label="Invoices" />
+            <NavItem view="settings" icon={Settings} label="Settings" />
         </nav>
 
         <div className="p-4 border-t border-slate-100">
             <div className="flex items-center gap-3 px-4 py-3 mb-2">
-                <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-indigo-600 font-bold">
-                    {user.name.charAt(0)}
-                </div>
+                {user.avatarUrl ? (
+                   <img src={user.avatarUrl} alt={user.name} className="h-10 w-10 rounded-full object-cover border border-slate-200" />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-indigo-600 font-bold border border-slate-200">
+                      {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className="overflow-hidden">
                     <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
                     <p className="text-xs text-slate-500 truncate">{user.email}</p>
@@ -84,6 +89,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, curren
             <nav className="space-y-4">
                 <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
                 <NavItem view="invoices" icon={FileText} label="Invoices" />
+                <NavItem view="settings" icon={Settings} label="Settings" />
                 <div className="pt-8 border-t border-slate-100">
                     <Button variant="danger" className="w-full justify-center" onClick={onLogout}>
                         <LogOut className="h-4 w-4 mr-2" /> Sign Out
