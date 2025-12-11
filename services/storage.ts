@@ -80,9 +80,14 @@ export const uploadAvatar = async (userId: string, file: File): Promise<string> 
     .upload(filePath, file, { upsert: true });
 
   if (uploadError) {
+    const msg = uploadError.message;
     // Check for common error indicating bucket missing
-    if (uploadError.message.includes('Bucket not found') || (uploadError as any).statusCode === '404') {
+    if (msg.includes('Bucket not found') || (uploadError as any).statusCode === '404') {
         throw new Error('Storage bucket "avatars" not found. Please run the provided supabase_setup.sql script in your Supabase SQL Editor.');
+    }
+    // Check for RLS error (Permission denied)
+    if (msg.includes('row-level security') || msg.includes('violates') || (uploadError as any).statusCode === '403') {
+        throw new Error('Permission denied. Please run the supabase_setup.sql script to fix database permissions.');
     }
     throw uploadError;
   }
