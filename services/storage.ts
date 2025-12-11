@@ -73,6 +73,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
 export const uploadAvatar = async (userId: string, file: File): Promise<string> => {
   // Ensure "avatars" bucket exists and policies allow insert/select for auth users in Supabase Dashboard
   const fileExt = file.name.split('.').pop();
+  // Use simple timestamp for uniqueness
   const filePath = `${userId}/avatar-${Date.now()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
@@ -93,20 +94,24 @@ export const uploadAvatar = async (userId: string, file: File): Promise<string> 
   }
 
   const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-  return data.publicUrl;
+  // Add a cache buster query param just in case the browser caches the URL if the filename reuse happens (unlikely with Date.now() but good practice)
+  return `${data.publicUrl}?t=${Date.now()}`;
 };
 
 export const updateUserProfile = async (updates: Partial<User>): Promise<User> => {
+  // Build the data object explicitly to avoid sending 'undefined' which might wipe existing data or be ignored unpredictably
+  const updateData: any = {};
+  
+  if (updates.name !== undefined) updateData.full_name = updates.name;
+  if (updates.avatarUrl !== undefined) updateData.avatar_url = updates.avatarUrl;
+  if (updates.companyName !== undefined) updateData.company_name = updates.companyName;
+  if (updates.phone !== undefined) updateData.phone = updates.phone;
+  if (updates.address !== undefined) updateData.address = updates.address;
+  if (updates.website !== undefined) updateData.website = updates.website;
+  if (updates.taxId !== undefined) updateData.tax_id = updates.taxId;
+
   const { data, error } = await supabase.auth.updateUser({
-    data: {
-      full_name: updates.name,
-      avatar_url: updates.avatarUrl,
-      company_name: updates.companyName,
-      phone: updates.phone,
-      address: updates.address,
-      website: updates.website,
-      tax_id: updates.taxId,
-    }
+    data: updateData
   });
 
   if (error) throw error;

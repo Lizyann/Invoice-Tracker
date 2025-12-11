@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../../types';
 import { Button, Input, TextArea, Card } from '../../components/ui';
-import { Camera, Save, User as UserIcon, Loader2, Trash2, Globe, FileText, Phone, MapPin, Building } from 'lucide-react';
+import { Camera, Save, User as UserIcon, Loader2, Trash2, Building } from 'lucide-react';
 import { uploadAvatar, updateUserProfile } from '../../services/storage';
 
 interface ProfileSettingsProps {
@@ -20,7 +20,17 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Clean up preview URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+        if (previewUrl && previewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(previewUrl);
+        }
+    };
+  }, [previewUrl]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -32,7 +42,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
     try {
       const updatedUser = await updateUserProfile(formData);
       onUpdate(updatedUser);
-      // Optional: Show a toast here
+      alert('Profile updated successfully!');
     } catch (error: any) {
       alert('Failed to update profile: ' + error.message);
     } finally {
@@ -54,6 +64,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
     try {
         const updatedUser = await updateUserProfile({ avatarUrl: '' });
         onUpdate(updatedUser);
+        setPreviewUrl(null);
     } catch (error: any) {
         alert('Failed to remove photo: ' + error.message);
     } finally {
@@ -65,24 +76,43 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image size should be less than 2MB");
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        alert("Please upload a valid image file.");
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // Increased to 5MB
+      alert("Image size should be less than 5MB");
       return;
     }
 
+    // Create immediate preview
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
     setIsUploading(true);
+
     try {
       const publicUrl = await uploadAvatar(user.id, file);
       const updatedUser = await updateUserProfile({ avatarUrl: publicUrl });
       onUpdate(updatedUser);
+      // We keep the previewUrl for a smooth transition, or clear it. 
+      // Clearing it relies on the new remote URL loading instantly.
+      // Let's clear it to ensure we are viewing the server version, 
+      // but maybe waiting a tick helps. For now, simply clearing.
+      setPreviewUrl(null); 
     } catch (error: any) {
       console.error(error);
       alert(error.message || 'Failed to upload image.');
+      setPreviewUrl(null); // Revert if failed
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+
+  // Determine what to show: Preview (during upload) -> User Avatar (remote) -> Initials
+  const displayUrl = previewUrl || user.avatarUrl;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -97,20 +127,27 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
             <Card className="p-6 flex flex-col items-center text-center">
                 <div className="relative group cursor-pointer mb-4" onClick={handleAvatarClick}>
                     <div className="h-32 w-32 rounded-full overflow-hidden bg-indigo-50 ring-4 ring-white shadow-lg flex items-center justify-center relative">
-                    {isUploading ? (
-                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
-                        <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+                    {isUploading && (
+                        <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-20 backdrop-blur-sm">
+                            <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
                         </div>
-                    ) : null}
+                    )}
                     
-                    {user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+                    {displayUrl ? (
+                        <img 
+                            src={displayUrl} 
+                            alt="Profile" 
+                            className="h-full w-full object-cover" 
+                            key={displayUrl} // Force re-render on URL change
+                        />
                     ) : (
-                        <span className="text-4xl font-bold text-indigo-600">{user.name.charAt(0).toUpperCase()}</span>
+                        <span className="text-4xl font-bold text-indigo-600 select-none">
+                            {user.name.charAt(0).toUpperCase()}
+                        </span>
                     )}
                     </div>
                     
-                    <div className={`absolute inset-0 bg-black/40 rounded-full flex items-center justify-center transition-opacity ${isUploading ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                    <div className={`absolute inset-0 bg-black/40 rounded-full flex items-center justify-center transition-opacity ${isUploading ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'} z-10`}>
                         <Camera className="h-8 w-8 text-white" />
                     </div>
                     
@@ -118,14 +155,21 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, onUpdate
                         type="file" 
                         ref={fileInputRef} 
                         className="hidden" 
-                        accept="image/jpeg,image/png,image/gif"
+                        accept="image/png, image/jpeg, image/gif, image/webp"
                         onChange={handleFileChange}
                         disabled={isUploading}
                     />
                 </div>
                 
-                {user.avatarUrl && (
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 -mt-2 mb-2" onClick={handleRemoveAvatar} disabled={isUploading}>
+                {displayUrl && (
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 -mt-2 mb-2" 
+                        onClick={handleRemoveAvatar} 
+                        disabled={isUploading}
+                        type="button"
+                    >
                         <Trash2 className="h-4 w-4 mr-2" /> Remove Photo
                     </Button>
                 )}
