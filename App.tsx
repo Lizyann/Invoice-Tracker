@@ -8,7 +8,7 @@ import { Layout } from './components/Layout';
 import { User, Invoice } from './types';
 import { logout, getInvoices, saveInvoice, deleteInvoice, saveInvoicesBulk, subscribeToAuthChanges } from './services/storage';
 import { HashRouter } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCcw } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -43,9 +43,16 @@ const App: React.FC = () => {
       const data = await getInvoices(userId);
       setInvoices(data);
     } catch (e: any) {
-      const msg = e.message || JSON.stringify(e);
-      console.error("Failed to fetch invoices:", msg);
-      setError("Could not load invoices. Please ensure you have run the database setup SQL.");
+      console.error("Full fetch error:", e);
+      // Safely extract error message
+      let msg = 'Unknown error occurred';
+      if (typeof e === 'string') msg = e;
+      else if (e instanceof Error) msg = e.message;
+      else if (e && typeof e === 'object') {
+        msg = e.message || e.error_description || e.details || JSON.stringify(e);
+      }
+      
+      setError(`Could not load invoices: ${msg}`);
     } finally {
         setIsLoadingData(false);
     }
@@ -70,7 +77,8 @@ const App: React.FC = () => {
         setCurrentInvoice(null);
         setView('invoices');
     } catch (e: any) {
-        alert("Failed to save invoice. " + (e.message || e));
+        const msg = e.message || JSON.stringify(e);
+        alert("Failed to save invoice: " + msg);
     }
   };
 
@@ -84,7 +92,8 @@ const App: React.FC = () => {
         await saveInvoicesBulk(invoicesWithUser);
         await fetchInvoices(user.id);
     } catch (e: any) {
-        alert("Failed to import. " + (e.message || e));
+        const msg = e.message || JSON.stringify(e);
+        alert("Failed to import: " + msg);
     }
   };
 
@@ -95,7 +104,8 @@ const App: React.FC = () => {
             await deleteInvoice(id);
             await fetchInvoices(user.id);
         } catch (e: any) {
-             alert("Failed to delete. " + (e.message || e));
+             const msg = e.message || JSON.stringify(e);
+             alert("Failed to delete: " + msg);
         }
     }
   };
@@ -128,8 +138,18 @@ const App: React.FC = () => {
         }}
       >
         {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                <strong>Error: </strong> {error}
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center justify-between">
+                <div>
+                  <strong>Connection Error: </strong> {error}
+                  <p className="mt-1 text-xs text-red-600">Please ensure you have run the <code className="bg-red-100 px-1 rounded">supabase_setup.sql</code> script in your Supabase SQL Editor.</p>
+                </div>
+                <button 
+                  onClick={() => user && fetchInvoices(user.id)}
+                  className="p-2 hover:bg-red-100 rounded-full transition-colors"
+                  title="Retry"
+                >
+                  <RefreshCcw className="h-4 w-4" />
+                </button>
             </div>
         )}
 
